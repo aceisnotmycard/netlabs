@@ -12,8 +12,8 @@ EXIT_MSG = "IEXIT"
 hosts = set()
 
 
-def send_msg(message: str, address: str, port: int):
-    SOCK.sendto(message.encode("utf8"), (address, port))
+def send_msg(message: str, addr):
+    SOCK.sendto(message.encode("utf8"), addr)
 
 
 def list_hosts(hosts: set):
@@ -24,22 +24,22 @@ def list_hosts(hosts: set):
 
 @atexit.register
 def say_goodbye():
-    send_msg(EXIT_MSG, BROADCAST_ADDR, PORT)
+    send_msg(EXIT_MSG, (BROADCAST_ADDR, PORT))
 
 
 if __name__ == "__main__":
-    PORT = sys.argv[-1]
+    PORT = int(sys.argv[-1])
     SOCK = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     SOCK.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     SOCK.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    SOCK.sendto(EXIT_MSG.encode("utf8"), (BROADCAST_ADDR, PORT))
+    send_msg(BORN_MSG, (BROADCAST_ADDR, PORT))
     while True:
         data, addr = SOCK.recvfrom(1024)
         if data.decode("utf8") == BORN_MSG:
             # add host to list, display it and say hello
             hosts.add(addr)
             list_hosts(hosts)
-            SOCK.sendto(LIVE_MSG.encode("utf8"), addr)
+            send_msg(LIVE_MSG, addr)
         elif data.decode("utf8") == LIVE_MSG:
             # add host to list, display it
             hosts.add(addr)
