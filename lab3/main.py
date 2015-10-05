@@ -33,6 +33,7 @@ if __name__ == "__main__":
     SOCK = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     SOCK.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     SOCK.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    SOCK.bind(('', PORT))
     send_msg(BORN_MSG, (BROADCAST_ADDR, PORT))
     while True:
         data, addr = SOCK.recvfrom(1024)
