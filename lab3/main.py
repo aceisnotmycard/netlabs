@@ -13,6 +13,7 @@ hosts = set()
 
 
 def send_msg(message: str, addr):
+    print("Sending {0} to {1}".format(message, addr))
     SOCK.sendto(message.encode("utf8"), addr)
 
 
