@@ -1,12 +1,29 @@
 import socket
 import sys
+import argparse
 
-BUFER_SIZE = 1024
+BUFFER_SIZE = 1024
+ENCODING = 'utf8'
+MSG_FILE_EXISTS = '0'
+MSG_FILE_NOT_EXISTS = '1'
 
 if __name__ == "__main__":
-    filename = sys.argv[-1]
-    host = sys.argv[1]
-    port = int(sys.argv[2])
-    s = socket.socket()
-    s.connect((host, port))
-    s.send("hello".encode("utf8"))
+    parser = argparse.ArgumentParser(description="Send file to remote server")
+    parser.add_argument('file', type=str, help='File to send', metavar='File')
+    parser.add_argument('host', type=str, help='Destination host', metavar='Server')
+    parser.add_argument('port', type=int, help='Destination port', metavar='Port')
+    args = parser.parse_args()
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((args.host, args.port))
+
+    with open(args.file, 'rb') as file:
+        sock.send(bytes(file.name, ENCODING))
+        conf = str(sock.recv(BUFFER_SIZE), ENCODING)
+        if conf == MSG_FILE_NOT_EXISTS:
+            data = file.read(BUFFER_SIZE)
+            while len(data) > 0:
+                sock.send(data)
+                data = file.read(BUFFER_SIZE)
+        else:
+            print("Sorry, {0} already exists".format(file.name))
