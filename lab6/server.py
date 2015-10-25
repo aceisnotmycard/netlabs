@@ -2,6 +2,7 @@ import socket
 import argparse
 from hashlib import md5
 import math
+from lab6 import proto
 
 prev_seq = ""
 
@@ -44,9 +45,27 @@ def main(genome: str, port: int):
     sock.bind(('', port))
     sock.listen(1)
 
+    sequences = create_ranges(genome_len=len(genome), num_ranges=8)
+
     while True:
         conn, addr = sock.accept()
         data = conn.recv(1024)
+        msg_type, msg_len, msg_str = proto.read(data)
+        if msg_type == proto.START_CRACK:
+            conn.send(proto.give_genome(encrypted_genome, len(genome)))
+        elif msg_type == proto.TAKE_MORE:
+            for seq in sequences:
+                if not sequences[seq]:
+                    sequences[seq] = True
+                    conn.send(proto.give_more(seq))
+                    break
+            else:
+                conn.send(proto.no_more())
+        elif msg_type == proto.SUCCESS:
+            print(msg_str)
+        else:
+            pass
+        conn.close()
 
 
 def printer(l, start=""):
@@ -60,11 +79,8 @@ def printer(l, start=""):
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser(description="Cracks given genome")
-    # parser.add_argument('genome', type=str, help='Genome to crack', metavar='Genome')
-    # parser.add_argument('port', type=int, help='Port to listen to', metavar='Port')
-    # args = parser.parse_args()
-    # main(args.genome, args.port)
-    sequences = create_ranges(genome_len=3, num_ranges=4)
-    for k in sequences:
-        print(k, sequences[k])
+    parser = argparse.ArgumentParser(description="Cracks given genome")
+    parser.add_argument('genome', type=str, help='Genome to crack', metavar='Genome')
+    parser.add_argument('port', type=int, help='Port to listen to', metavar='Port')
+    args = parser.parse_args()
+    main(args.genome, args.port)
