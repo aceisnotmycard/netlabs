@@ -1,8 +1,11 @@
+import argparse
 from hashlib import md5
+import socket
+from lab6 import proto
 
 
 def str_to_md5(genome: str):
-    md5(bytes(genome, "utf8")).digest()
+    return md5(genome.encode("utf8")).digest()
 
 
 def cracked(candidate: str, encrypted_genome: str) -> bool:
@@ -23,15 +26,31 @@ def get_next_seq(seq: str, pos) -> str:
         return get_next_seq(seq, pos + 1)
 
 
-def crack(seq: str, count: int, encrypted_genome: str):
+def crack(seq: str, count: int, encrypted_genome: str) -> (str, bool):
     for i in range(count):
         if not cracked(seq, encrypted_genome):
-            seq = get_next_seq(seq)
-            print(seq)
+            seq = get_next_seq(seq, 1)
         else:
-            return seq
+            return seq, True
+    else:
+        return "", False
 
+
+def main(server: str, port: int):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((server, port))
+    sock.send(proto.start_crack())
+    data = sock.recv(1024)
+    type, size, msg = proto.read(data)
+    if type == proto.GIVE_GENOME:
+        print(msg.decode(encoding='utf8'))
+    else:
+        print("Fail")
 
 
 if __name__ == '__main__':
-    crack("aaa", 16, "")
+    parser = argparse.ArgumentParser(description="Cracks given genome")
+    parser.add_argument('server', type=str, help='Server', metavar='Server')
+    parser.add_argument('port', type=int, help='Port', metavar='Port')
+    args = parser.parse_args()
+    main(args.server, args.port)

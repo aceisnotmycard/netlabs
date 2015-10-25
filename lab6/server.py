@@ -39,7 +39,7 @@ def create_ranges(genome_len: int, num_ranges: int):
 def main(genome: str, port: int):
     clients_list = []
 
-    encrypted_genome = md5(genome).digest()
+    encrypted_genome = md5(genome.encode("utf8")).digest()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('', port))
@@ -68,14 +68,14 @@ def main(genome: str, port: int):
         conn.close()
 
 
-def printer(l, start=""):
-    alph = ["a", "c", "g", "t"]
-    if l == 0:
-        # do something here
-        pass
-    else:
-        for a in alph:
-            printer(l - 1, start + a)
+# def printer(l, start=""):
+#     alph = ["a", "c", "g", "t"]
+#     if l == 0:
+#         # do something here
+#         pass
+#     else:
+#         for a in alph:
+#             printer(l - 1, start + a)
 
 
 if __name__ == "__main__":
