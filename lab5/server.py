@@ -1,6 +1,7 @@
 import socket
 import argparse
 import os
+import struct
 
 BUFFER_SIZE = 1024
 ENCODING = "utf8"
@@ -20,20 +21,15 @@ if __name__ == "__main__":
 
     conn, addr = sock.accept()
     print('Connection address: {0}'.format(addr))
-
     data = conn.recv(BUFFER_SIZE)
-    filename = os.path.basename(str(data, ENCODING))
-    if os.path.isfile(filename):
-        conn.send(bytes(MSG_FILE_EXISTS, ENCODING))
-        exit()
-    else:
-        conn.send(bytes(MSG_FILE_NOT_EXISTS, ENCODING))
-
-    file = open(UPLOAD_DIR + filename, 'wb')
+    filename_size = struct.unpack('!H', data[:2])
+    filename = str(data[2:], ENCODING)
+    file = open(UPLOAD_DIR + filename, 'wb+')
+    data = conn.recv(BUFFER_SIZE)
     while True:
         data = conn.recv(BUFFER_SIZE)
         if not data: break
         file.write(data)
     file.close()
-    conn.send(bytes("File received", ENCODING))
+    conn.send(struct.pack('!b', 0))
     conn.close()
