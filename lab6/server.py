@@ -37,7 +37,7 @@ def create_ranges(genome_len: int, num_ranges: int):
 
 
 def main(genome: str, port: int):
-    clients_list = []
+    clients_list = {}
     encrypted_genome = md5(genome.encode("utf8")).digest()
     sequences = create_ranges(genome_len=len(genome), num_ranges=8)
 
@@ -52,20 +52,20 @@ def main(genome: str, port: int):
         if msg_type == proto.START_CRACK:
             conn.send(proto.give_genome(encrypted_genome))
         elif msg_type == proto.TAKE_MORE:
-            for seq in sequences:
-                if not seq:
-                    conn.send(proto.give_more(seq))
-                    seq = True
-                    clients_list[addr] = seq
-                    for client, val in clients_list:
-                        print(client, val)
+            for key in sequences:
+                if not sequences[key]:
+                    conn.send(proto.give_more(key))
+                    sequences[key] = True
+                    clients_list[str(addr)] = sequences[key]
+                    for client in clients_list:
+                        print(client, clients_list[client])
                     break
             else:
                 conn.send(proto.no_more())
         elif msg_type == proto.SUCCESS:
             # parse data and close other connections
             print("{0} found answer: {1} ".format(addr, proto.parse_success(data)))
-            conn.send(1)
+            conn.send('1'.encode('utf8'))
         conn.close()
 
 
