@@ -4,12 +4,8 @@ import socket
 from lab6 import proto
 
 
-def str_to_md5(genome: str):
-    return md5(genome.encode("utf8")).digest()
-
-
 def cracked(candidate: str, encrypted_genome: str) -> bool:
-    return str_to_md5(candidate) == encrypted_genome
+    return md5(candidate.encode("utf8")).digest() == encrypted_genome
 
 
 def get_next_seq(seq: str, pos) -> str:
@@ -29,6 +25,7 @@ def get_next_seq(seq: str, pos) -> str:
 def crack(seq: str, count: int, encrypted_genome: str) -> (str, bool):
     for i in range(count):
         if not cracked(seq, encrypted_genome):
+            print(seq)
             seq = get_next_seq(seq, 1)
         else:
             return seq, True
@@ -36,14 +33,36 @@ def crack(seq: str, count: int, encrypted_genome: str) -> (str, bool):
         return "", False
 
 
-def main(server: str, port: int):
+def try_crack(data: bytes, genome: str) -> (str, bool):
+    if proto.parse_msg_type(data) == proto.NO_MORE:
+        print("No more sequences. Soryan")
+        exit(0)  # todo: refactor
+    steps, seq = proto.parse_more(data)
+    return crack(seq, steps, genome)
+
+
+def send_msg(server, port, msg: bytes):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((server, port))
-    sock.send(proto.start_crack())
-    data = sock.recv(1024)
-    type, size, msg = proto.read(data)
-    if type == proto.GIVE_GENOME:
-        print(msg.decode(encoding='utf8'))
+    sock.send(msg)
+    response = sock.recv(1024)
+    sock.close()
+    return response
+
+
+def main(server: str, port: int):
+    data = send_msg(server, port, proto.start_crack())
+    msg_type = proto.parse_msg_type(data)
+    if msg_type == proto.GIVE_GENOME:
+        genome = proto.parse_genome(data)
+        data = send_msg(server, port, proto.take_more())
+        seq, success = try_crack(data, genome)
+        while not success:
+            data = send_msg(server, port, proto.take_more())
+            seq, success = try_crack(data, genome)
+        else:
+            send_msg(server, port, proto.success(seq))
+            print(seq)
     else:
         print("Fail")
 

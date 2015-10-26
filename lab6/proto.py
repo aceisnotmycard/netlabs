@@ -20,15 +20,15 @@ def take_more():
 
 
 def success(genome: str):
-    return struct.pack("!bi{0}s".format(len(genome.encode("utf8"))), SUCCESS, len(genome), genome.encode("utf8"))
+    return struct.pack("!bi{}s".format(len(genome.encode("utf8"))), SUCCESS, len(genome), genome.encode("utf8"))
 
 
-def give_genome(encrypted_genome: bytes, genome_len: int):
-    return struct.pack("!bi{0}s".format(len(encrypted_genome)), GIVE_GENOME, genome_len, encrypted_genome)
+def give_genome(encrypted_genome: bytes):
+    return struct.pack("!bi{}s".format(len(encrypted_genome)), GIVE_GENOME, len(encrypted_genome), encrypted_genome)
 
 
 def give_more(seq: (str, int)):
-    return struct.pack("!bi{0}s".format(len(seq[1].encode("utf8"))), GIVE_MORE, seq[0], seq[1].encode("utf8"))
+    return struct.pack("!bii{}s".format(len(seq[0])), GIVE_GENOME, seq[1], len(seq[0]), seq[0].encode("utf8"))
 
 
 def no_more():
@@ -37,3 +37,24 @@ def no_more():
 
 def read(msg):
     return struct.unpack("!bis", msg)
+
+
+def parse_msg_type(data: bytes):
+    return struct.unpack("!b", data[:1])[0]
+
+
+def parse_genome(data: bytes):
+    genome_len = struct.unpack("!i", data[1:5])[0]
+    return struct.unpack("!{}s".format(genome_len), data[5:])[0]
+
+
+def parse_more(data: bytes):
+    steps = struct.unpack("!i", data[1:5])[0]
+    seq_len = struct.unpack("!i", data[5:9])[0]
+    seq = struct.unpack("!{}s".format(seq_len), data[9:])[0].decode("utf8")
+    return steps, seq
+
+
+def parse_success(data: bytes):
+    genome_len = struct.unpack("!i", data[1:5])[0]
+    return struct.unpack("!{}s".format(genome_len), data[5:])[0].decode("utf8")

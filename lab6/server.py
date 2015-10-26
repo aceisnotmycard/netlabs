@@ -38,44 +38,40 @@ def create_ranges(genome_len: int, num_ranges: int):
 
 def main(genome: str, port: int):
     clients_list = []
-
     encrypted_genome = md5(genome.encode("utf8")).digest()
+    sequences = create_ranges(genome_len=len(genome), num_ranges=8)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(('', port))
     sock.listen(1)
 
-    sequences = create_ranges(genome_len=len(genome), num_ranges=8)
-
     while True:
         conn, addr = sock.accept()
         data = conn.recv(1024)
-        msg_type, msg_len, msg_str = proto.read(data)
+        msg_type = proto.parse_msg_type(data)
         if msg_type == proto.START_CRACK:
-            conn.send(proto.give_genome(encrypted_genome, len(genome)))
+            conn.send(proto.give_genome(encrypted_genome))
         elif msg_type == proto.TAKE_MORE:
             for seq in sequences:
-                if not sequences[seq]:
-                    sequences[seq] = True
+                if not seq:
                     conn.send(proto.give_more(seq))
+                    seq = True
+                    clients_list[addr] = seq
+                    for client, val in clients_list:
+                        print(client, val)
                     break
             else:
                 conn.send(proto.no_more())
         elif msg_type == proto.SUCCESS:
-            print(msg_str)
-        else:
-            pass
+            # parse data and close other connections
+            print("{0} found answer: {1} ".format(addr, proto.parse_success(data)))
+            conn.send(1)
         conn.close()
 
 
-# def printer(l, start=""):
-#     alph = ["a", "c", "g", "t"]
-#     if l == 0:
-#         # do something here
-#         pass
-#     else:
-#         for a in alph:
-#             printer(l - 1, start + a)
+
+
+
 
 
 if __name__ == "__main__":
