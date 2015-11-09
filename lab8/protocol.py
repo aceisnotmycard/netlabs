@@ -10,6 +10,8 @@ MSG_SONG = 2
 MSG_CONNECT = 3
 # disconnect from current station
 MSG_DISCONNECT = 4
+# client disconnected
+MSG_EXIT = 5
 
 
 def send_stations(stations: str):
@@ -22,6 +24,10 @@ def send_addr(addr: str):
 
 def get_stations():
     return struct.pack("!b", MSG_LIST)
+
+
+def exit():
+    return struct.pack("!b", MSG_EXIT)
 
 
 def connect_to_station(station: int):
