@@ -1,3 +1,4 @@
+import signal
 import socket
 import struct
 import sys
@@ -18,15 +19,26 @@ d – disconnect from station
 
 def listener(sock: socket.socket):
     while True:
-        data = sock.recv(1024)
-        print("Received: ", data.decode("utf8"))
+        try:
+            data = sock.recv(1024)
+            print("Received: ", data.decode("utf8"))
+        except OSError:
+            return
 
 
 def main(host: str, port: int):
+    tcp_sock = None
+    udp_thread = None
+    udp_sock = None
+
+    def exit_handler(arg1, arg2):
+        tcp_sock.send(protocol.exit())
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, exit_handler)
+
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_sock.connect((host, port))
-
-    udp_thread = None
 
     print(HELP)
     while True:
@@ -45,15 +57,18 @@ def main(host: str, port: int):
             if protocol.parse_type(data) == protocol.MSG_CONNECT:
                 group = protocol.parse_text(data).decode('utf8')
                 udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                udp_sock.bind(('', port))
                 udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+                udp_sock.bind(('', port))
                 mreq = struct.pack("=4sl", socket.inet_aton(group), socket.INADDR_ANY)
                 udp_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
                 udp_thread = threading.Thread(target=listener, args=(udp_sock,))
+                udp_thread.daemon = True
                 udp_thread.start()
         elif ch == "?":
             pass
         elif ch == "d":
+            print('Disconnected from station')
             udp_sock.close()
             # stop listening to station
             pass

@@ -31,12 +31,12 @@ class Station(threading.Thread):
         super(Station, self).run()
         while True:
             for f in self.songs:
-                print("Opening {}".format(f))
+                # print("Opening {}".format(f))
                 time.sleep(1)
                 self.current_song = f
                 with open(self.folder + '/' + f, 'r') as song:
                     for line in song.readlines():
-                        print('Broadcasting: ' + line)
+                        # print('Broadcasting: ' + line)
                         self.sock.sendto(line.encode('utf8'), self.mcast)
                         time.sleep(1)
 
@@ -62,6 +62,9 @@ class MusicTCPHandler(socketserver.BaseRequestHandler):
                 self.request.sendall(protocol.send_addr(stations[station_number].mcast[0]))
             elif msg_type == protocol.MSG_DISCONNECT:
                 print("{0} disconnected from station".format(self.client_address))
+            elif msg_type == protocol.MSG_EXIT:
+                print("Client {} disconnected".format(self.client_address))
+                return
             else:
                 print("WTF?")
 
