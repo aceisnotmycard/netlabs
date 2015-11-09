@@ -3,6 +3,7 @@ import socket
 import struct
 import sys
 import threading
+import pyaudio
 from lab8 import protocol
 
 BUFFER_SIZE = 1024
@@ -13,15 +14,26 @@ h – show this menu
 l – list available stations and current songs
 {station number} – connect to specified station
 d – disconnect from station
-? – show current songs
 """
+
+
+# todo
+def audio_listener(sock: socket.socket):
+    p = pyaudio.PyAudio()
+    stream = p.open(output=True)
+    while True:
+        try:
+            data = sock.recv(1024)
+            # print("Received: ", data)
+        except OSError:
+            return
 
 
 def listener(sock: socket.socket):
     while True:
         try:
             data = sock.recv(1024)
-            print("Received: ", data.decode("utf8"))
+            print("Received: ", data)
         except OSError:
             return
 
@@ -65,8 +77,6 @@ def main(host: str, port: int):
                 udp_thread = threading.Thread(target=listener, args=(udp_sock,))
                 udp_thread.daemon = True
                 udp_thread.start()
-        elif ch == "?":
-            pass
         elif ch == "d":
             print('Disconnected from station')
             udp_sock.close()

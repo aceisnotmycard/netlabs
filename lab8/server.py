@@ -34,10 +34,11 @@ class Station(threading.Thread):
                 # print("Opening {}".format(f))
                 time.sleep(1)
                 self.current_song = f
-                with open(self.folder + '/' + f, 'r') as song:
-                    for line in song.readlines():
-                        # print('Broadcasting: ' + line)
-                        self.sock.sendto(line.encode('utf8'), self.mcast)
+                with open(self.folder + '/' + f, 'rb') as song:
+                    data = song.read(BUFFER_SIZE)
+                    while data:
+                        self.sock.sendto(data, self.mcast)
+                        data = song.read(BUFFER_SIZE)
                         time.sleep(1)
 
 
