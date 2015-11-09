@@ -12,8 +12,12 @@ MSG_CONNECT = 3
 MSG_DISCONNECT = 4
 
 
-def send_stations(stations: bytes):
-    return struct.pack("!bi{}s".format(len(stations)), MSG_LIST, len(stations), stations)
+def send_stations(stations: str):
+    return struct.pack("!bi{}s".format(len(stations)), MSG_LIST, len(stations), stations.encode('utf8'))
+
+
+def send_addr(addr: str):
+    return struct.pack("!bi{}s".format(len(addr)), MSG_CONNECT, len(addr), addr.encode('utf8'))
 
 
 def get_stations():
@@ -22,6 +26,7 @@ def get_stations():
 
 def connect_to_station(station: int):
     return struct.pack("!bi", MSG_CONNECT, station)
+
 
 def parse_text(data: bytes):
     length = struct.unpack("!i", data[1:5])[0]
